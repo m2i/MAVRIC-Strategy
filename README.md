@@ -1,4 +1,4 @@
-# Strategy
+# MAVRIC-Strategy
 The repository for the simulation and strategy development team.
 
 What goes here:

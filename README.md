@@ -1,4 +1,4 @@
-# MAVRIC Phoenix : [Team Name]
+# MAVRIC Phoenix : Strategy Team
 The repository for the Strategy Team. Includes designs and documentation.
 
 # Team Structure

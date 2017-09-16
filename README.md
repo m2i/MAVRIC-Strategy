@@ -2,13 +2,10 @@
 The repository for the Strategy Team. Includes designs and documentation.
 
 # Team Structure
-Team Lead: [Team Lead's name] (@[team lead's github account])
+Team Lead: Gabe Goldman (@[team lead's github account])
 
 Members:
- * ?
- * ?
- * ?
- * ?
+ * Isaiah Exley-Schuman
 
 # Folder Structure:
 

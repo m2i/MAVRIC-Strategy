@@ -38,12 +38,14 @@ class Phoenix (threading.Thread):
         self._temperature_socket.close()
         
     def setWheels(self, left, right):
-        
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self._ip, 9002))
-        s.sendall(('D'+str(left)+','+str(right)).encode())
-        s.close()
-                
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect((self._ip, 9002))
+            s.sendall(('D'+str(left)+','+str(right)).encode())
+            s.close()
+        except socket.error as e:
+            print(e)
     @property
     def temperature(self):
         return self._temperature

@@ -18,20 +18,17 @@ class Phoenix (threading.Thread):
         self._gps.start()
         buffer = ''
         while self._run:
-            if self._temperature_socket == None:
-                self._temperature_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._temperature_socket.settimeout(1)
-                self._temperature_socket.connect((self._ip, 8002))
-                
             try:
+                if self._temperature_socket == None:
+                    self._temperature_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self._temperature_socket.settimeout(1)
+                    self._temperature_socket.connect((self._ip, 8002))
                 buffer = buffer + self._temperature_socket.recv(1024).decode()
                 while '\r\n' in buffer:
                     (line, buffer) = buffer.split('\r\n', 1)
                     self._temperature = float(line)
             except socket.error as e:
                 print(e)
-                self._temperature_socket.shutdown()
-                self._temperature_socket.close()
                 self._temperature_socket = None
                 
     def close(self):
@@ -41,6 +38,7 @@ class Phoenix (threading.Thread):
         self._temperature_socket.close()
         
     def setWheels(self, left, right):
+        
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self._ip, 9002))
         s.sendall(('D'+str(left)+','+str(right)).encode())
@@ -85,19 +83,16 @@ class GPS (threading.Thread):
     def run(self):
         buffer = ''
         while self._run:
-            if self._socket == None:
-                self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._socket.settimeout(1)
-                self._socket.connect((self._ip, self._port))
-                
             try:
+                if self._socket == None:
+                    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self._socket.settimeout(1)
+                    self._socket.connect((self._ip, self._port))
                 buffer = buffer + self._socket.recv(1024).decode()
                 while "\n" in buffer:
                     (line, buffer) = buffer.split('\n', 1)
                     self.parseLine(line)
             except socket.error as e:
-                self._socket.shutdown()
-                self._socket.close()
                 self._socket = None
 
     def close(self):

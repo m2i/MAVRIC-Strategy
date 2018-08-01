@@ -2,58 +2,31 @@ import math
 import socket
 import threading
 
-class Phoenix (threading.Thread):
-    _temperature_socket = None
-    _actuator_socket = None
+class Phoenix:
+    _temperature_getter = None
+    _actuator_getter = None
     _run = True
-    _temperature = 0.;
-    _actuator = 0.;
     _gps = None
     _ip = None
     
     def __init__(self, ip):
         self._gps = GPS(ip, 8001);
         self._ip = ip
-        threading.Thread.__init__(self)
-        
-    def run(self):
+        self._temperature_getter = ValueGetter(ip, 8002, float)
+        self._actuator_getter = ValueGetter(ip, 10002, float)
+    
+    def open(self):
+        self._temperature_getter.start()
+        self._actuator_getter.start()
         self._gps.start()
-        temperature_buffer = ''
-        actuator_buffer = ''
-        while self._run:
-            try:
-                if self._temperature_socket == None:
-                    self._temperature_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self._temperature_socket.settimeout(1)
-                    self._temperature_socket.connect((self._ip, 8002))
-                temperature_buffer = temperature_buffer + self._temperature_socket.recv(1024).decode()
-                while '\r\n' in temperature_buffer:
-                    (line, temperature_buffer) = temperature_buffer.split('\r\n', 1)
-                    self._temperature = float(line)
-                                    
-            except socket.error as e:
-                print(e)
-                self._temperature_socket = None
-            
-            try:
-                if self._actuator_socket == None:
-                    self._actuator_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self._actuator_socket.settimeout(1)
-                    self._actuator_socket.connect((self._ip, 10002))
-                actuator_buffer = actuator_buffer + self._actuator_socket.recv(1024).decode()
-                while '\r\n' in actuator_buffer:
-                    (line, actuator_buffer) = actuator_buffer.split('\r\n', 1)
-                    self._actuator = float(line)
-                
-            except socket.error as e:
-                print(e)
-                self._actuator_socket = None
-                
+    
     def close(self):
-        self._run = False
         self._gps.close()
-        self.join()
-        self._temperature_socket.close()
+        self._temperature_getter.close()
+        self._actuator_getter.close()
+        self._gps.join()
+        self._temperature_getter.join()
+        self._actuator_getter.join()
         
     def setWheels(self, left, right):
         try:
@@ -70,24 +43,64 @@ class Phoenix (threading.Thread):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(1)
             s.connect((self._ip, 10001))
-            s.sendall(('FSR'[direction+1]).encode())
+            s.sendall(('RSF'[direction+1]).encode())
             s.close()
         except socket.error as e:
             print(e)
 
     @property
     def temperature(self):
-        return self._temperature
+        return self._temperature_getter.value
     
     @property
     def actuator(self):
-        return self._actuator
+        return self._actuator_getter.value
     
     @property
     def gps(self):
         return self._gps
+
+class ValueGetter (threading.Thread):
+    _socket = None
+    _run = True
+    _ip = None
+    _port = None
+    _value = None
+    _parser = None
     
-class GPS (threading.Thread):
+    def __init__(self, ip, port, parser):
+        self._ip = ip
+        self._port = port
+        threading.Thread.__init__(self)
+        self._parser = parser
+        
+    def run(self):
+        buffer = ''
+        while self._run:
+            try:
+                if self._socket == None:
+                    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self._socket.settimeout(1)
+                    self._socket.connect((self._ip, self._port))
+                buffer = buffer + self._socket.recv(1024).decode()
+                while '\r\n' in buffer:
+                    (line, buffer) = buffer.split('\r\n', 1)
+                    self._value = self._parser(line)
+                                    
+            except socket.error:
+                self._socket = None
+            
+    def close(self):
+        self._run = False
+        self.join()
+        if self._socket != None:
+            self._socket.close()
+        
+    @property
+    def value(self):
+        return self._value
+        
+class GPS (ValueGetter):
     _good_fix = False
     _latitude = 0.
     _longitude = 0.
@@ -95,15 +108,9 @@ class GPS (threading.Thread):
     _speed = 0.
     _heading = 0.
     _satelites = 0.
-    _ip = None
-    _port = None
-    _socket = None
-    _run = True
     
     def __init__(self, ip, port):
-        self._ip = ip
-        self._port = port
-        threading.Thread.__init__(self)
+        ValueGetter.__init__(self, ip, port, self.parseLine)
         
     def parseLine(self, line):
         data = line.split(',')
@@ -114,6 +121,7 @@ class GPS (threading.Thread):
         self._speed = float(data[4])
         self._heading = float(data[5])
         self._satellites = int(data[6])
+        return None
         
     def run(self):
         buffer = ''

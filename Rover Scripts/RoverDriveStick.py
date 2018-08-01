@@ -51,7 +51,7 @@ R = 0
 L = 0
 axis1 = 0
 axis0 = 0
-rover.start()
+rover.open()
 actuator_enabled = False
 try:
     
@@ -90,7 +90,7 @@ try:
                 R = val1+val2
                 rover.setWheels(L,R)
             elif event.type == pygame.JOYHATMOTION:
-                rover.setActuator(-event.value[1])
+                rover.setActuator(event.value[1])
                 
     pygame.quit()
 except Exception as e:

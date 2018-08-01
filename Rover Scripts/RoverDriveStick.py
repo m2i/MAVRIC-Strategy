@@ -32,7 +32,7 @@ port = 9002
 #print ('Socket Connected to ip ' + ip)
 
 # open and name viewing window
-win = pygame.display.set_mode((500,500))
+screen = pygame.display.set_mode((500,500))
 pygame.display.set_caption("Rover Driving Code")
 
 # find controller
@@ -51,26 +51,44 @@ R = 0
 L = 0
 axis1 = 0
 axis0 = 0
-while run:
-    # loop every .1 seconds
-    pygame.time.delay(100)
+rover.start()
+actuator_enabled = False
+try:
     
-    for event in pygame.event.get():
-        # end program if red x pressed
-        if event.type == pygame.QUIT:
-            run = False
-        # detect button motion
-        elif event.type == pygame.JOYAXISMOTION:
-            #print(event)
-            if event.axis == 1:
-                axis1 = event.value;
-            if event.axis == 0:
-                axis0 = event.value;
-            
-            val2 = int(-axis0*50)
-            val1 = int(-axis1*100)
-            print (str(axis1) + ", " + str(axis0))
-            L = val1-val2
-            R = val1+val2
-            rover.setWheels(L,R)
-pygame.quit()
+    # initialize font; must be called after 'pygame.init()' to avoid 'Font not Initialized' error
+    myfont = pygame.font.SysFont("Arial", 15)
+    while run:
+        # loop every .1 seconds
+        pygame.time.delay(100)
+        temp_message = "Temperature: %0.2f C" % (rover.temperature)
+        # render text
+        label = myfont.render(temp_message, 1, (255,255,0))
+        screen.fill((0,0,0))
+        screen.blit(label, (100, 100))
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            # end program if red x pressed
+            if event.type == pygame.QUIT:
+                run = False
+            # detect button motion
+            elif event.type == pygame.JOYAXISMOTION:
+                #print(event)
+                if event.axis == 1:
+                    axis1 = event.value;
+                if event.axis == 0:
+                    axis0 = event.value;
+            elif event.type == pygame.JOYHATMOTION:
+                rover.setActuator(-event.value[1])
+                
+                val2 = int(-axis0*50)
+                val1 = int(-axis1*100)
+                L = val1-val2
+                R = val1+val2
+                rover.setWheels(L,R)
+    pygame.quit()
+except Exception as e:
+    print(e)
+    pass
+finally:
+    rover.close()

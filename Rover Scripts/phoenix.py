@@ -46,6 +46,17 @@ class Phoenix (threading.Thread):
             s.close()
         except socket.error as e:
             print(e)
+            
+    def setActuator(self, direction):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect((self._ip, 10001))
+            s.sendall(('FSR'[direction+1]).encode())
+            s.close()
+        except socket.error as e:
+            print(e)
+
     @property
     def temperature(self):
         return self._temperature

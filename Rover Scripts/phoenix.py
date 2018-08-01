@@ -4,8 +4,10 @@ import threading
 
 class Phoenix (threading.Thread):
     _temperature_socket = None
+    _actuator_socket = None
     _run = True
     _temperature = 0.;
+    _actuator = 0.;
     _gps = None
     _ip = None
     
@@ -16,20 +18,36 @@ class Phoenix (threading.Thread):
         
     def run(self):
         self._gps.start()
-        buffer = ''
+        temperature_buffer = ''
+        actuator_buffer = ''
         while self._run:
             try:
                 if self._temperature_socket == None:
                     self._temperature_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     self._temperature_socket.settimeout(1)
                     self._temperature_socket.connect((self._ip, 8002))
-                buffer = buffer + self._temperature_socket.recv(1024).decode()
-                while '\r\n' in buffer:
-                    (line, buffer) = buffer.split('\r\n', 1)
+                temperature_buffer = temperature_buffer + self._temperature_socket.recv(1024).decode()
+                while '\r\n' in temperature_buffer:
+                    (line, temperature_buffer) = temperature_buffer.split('\r\n', 1)
                     self._temperature = float(line)
+                                    
             except socket.error as e:
                 print(e)
                 self._temperature_socket = None
+            
+            try:
+                if self._actuator_socket == None:
+                    self._actuator_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    self._actuator_socket.settimeout(1)
+                    self._actuator_socket.connect((self._ip, 10002))
+                actuator_buffer = actuator_buffer + self._actuator_socket.recv(1024).decode()
+                while '\r\n' in actuator_buffer:
+                    (line, actuator_buffer) = actuator_buffer.split('\r\n', 1)
+                    self._actuator = float(line)
+                
+            except socket.error as e:
+                print(e)
+                self._actuator_socket = None
                 
     def close(self):
         self._run = False
@@ -60,6 +78,10 @@ class Phoenix (threading.Thread):
     @property
     def temperature(self):
         return self._temperature
+    
+    @property
+    def actuator(self):
+        return self._actuator
     
     @property
     def gps(self):

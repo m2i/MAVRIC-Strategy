@@ -21,12 +21,12 @@ class Phoenix:
         self._gps.start()
     
     def close(self):
-        self._gps.close()
-        self._temperature_getter.close()
-        self._actuator_getter.close()
-        self._gps.join()
-        self._temperature_getter.join()
-        self._actuator_getter.join()
+        if self._gps != None:
+            self._gps.close()
+        if self._temperature_getter != None:
+            self._temperature_getter.close()
+        if self._actuator_getter != None:
+            self._actuator_getter.close()
         
     def setWheels(self, left, right):
         try:
@@ -141,7 +141,8 @@ class GPS (ValueGetter):
     def close(self):
         self._run = False
         self.join()
-        self._socket.close()
+        if self._socket != None:
+            self._socket.close()
 
     @property
     def good_fix(self):

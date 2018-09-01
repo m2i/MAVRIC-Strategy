@@ -60,16 +60,22 @@ try:
     while run:
         # loop every .1 seconds
         pygame.time.delay(100)
-        
+        rover.setWheels(L,R)        
         screen.fill((0,0,0))
         
-        temp_message = "Temperature: %0.2f C" % (rover.temperature)
-        label = myfont.render(temp_message, 1, (255,255,0))
-        screen.blit(label, (100, 100))
+        try:
+            temp_message = "Temperature: %0.2f C" % (rover.temperature)
+            label = myfont.render(temp_message, 1, (255,255,0))
+            screen.blit(label, (100, 100))
+        except:
+            pass
         
-        temp_message = "Actuator: ~%0.2f" % (rover.actuator)
-        label = myfont.render(temp_message, 1, (255,255,0))
-        screen.blit(label, (100, 200))
+        try:
+            temp_message = "Actuator: ~%0.2f" % (rover.actuator)
+            label = myfont.render(temp_message, 1, (255,255,0))
+            screen.blit(label, (100, 200))
+        except:
+            pass
         pygame.display.flip()
         
         for event in pygame.event.get():
@@ -88,7 +94,7 @@ try:
                 val1 = int(-axis1*100)
                 L = val1-val2
                 R = val1+val2
-                rover.setWheels(L,R)
+
             elif event.type == pygame.JOYHATMOTION:
                 rover.setActuator(event.value[1])
                 
